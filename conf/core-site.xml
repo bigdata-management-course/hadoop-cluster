@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<configuration>
+  <property><name>fs.defaultFS</name><value>hdfs://namenode:8020</value></property>
+  <!-- User shown as owner when browsing HDFS from the web UIs. -->
+  <property><name>hadoop.http.staticuser.user</name><value>hadoop</value></property>
+</configuration>

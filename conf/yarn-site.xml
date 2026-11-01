@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<configuration>
+  <property><name>yarn.resourcemanager.hostname</name><value>resourcemanager</value></property>
+  <property><name>yarn.nodemanager.aux-services</name><value>mapreduce_shuffle</value></property>
+  <!-- Must stay below the nodemanager mem_limit in docker-compose.yml. -->
+  <property><name>yarn.nodemanager.resource.memory-mb</name><value>2048</value></property>
+  <property><name>yarn.nodemanager.resource.cpu-vcores</name><value>4</value></property>
+  <property><name>yarn.scheduler.minimum-allocation-mb</name><value>256</value></property>
+  <property><name>yarn.scheduler.maximum-allocation-mb</name><value>2048</value></property>
+  <property><name>yarn.nodemanager.vmem-check-enabled</name><value>false</value></property>
+  <!-- Laptop disks are often >90% full, which would mark the node unhealthy. -->
+  <property><name>yarn.nodemanager.disk-health-checker.max-disk-utilization-per-disk-percentage</name><value>99</value></property>
+  <property><name>yarn.log-aggregation-enable</name><value>true</value></property>
+  <property><name>yarn.log.server.url</name><value>http://historyserver:19888/jobhistory/logs</value></property>
+</configuration>

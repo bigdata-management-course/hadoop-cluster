@@ -1,0 +1,123 @@
+# Small Hadoop 3.4.1 cluster: namenode, 2 datanodes (+1 spare), YARN, history.
+# State lives in the containers: `docker compose down` wipes HDFS.
+---
+name: hadoop-lab
+
+x-hadoop: &hadoop
+  image: bigdata-lab/hadoop:3.4.1
+  build: .
+  volumes:
+    - ./conf:/opt/hadoop/etc/lab:ro
+  environment:
+    HADOOP_HEAPSIZE_MAX: 256m
+  mem_limit: 512m
+
+x-health: &health
+  interval: 5s
+  timeout: 3s
+  retries: 30
+  start_period: 10s
+
+services:
+  namenode:
+    <<: *hadoop
+    hostname: namenode
+    mem_limit: 768m
+    environment:
+      HADOOP_HEAPSIZE_MAX: 512m
+    command: >
+      sh -c "[ -d /hadoop/dfs/name/current ] ||
+             hdfs namenode -format -nonInteractive;
+             exec hdfs namenode"
+    ports:
+      - "127.0.0.1:9870:9870"
+    volumes:
+      - ./conf:/opt/hadoop/etc/lab:ro
+      # Lab files (jar, python scripts, data) so clients can run from here.
+      - ./:/lab:ro
+    healthcheck:
+      <<: *health
+      test:
+        - CMD
+        - curl
+        - -fs
+        - http://localhost:9870/
+
+  datanode1: &datanode
+    <<: *hadoop
+    hostname: datanode1
+    command: hdfs datanode
+    depends_on:
+      namenode:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      test:
+        - CMD
+        - curl
+        - -fs
+        - http://localhost:9864/
+
+  datanode2:
+    <<: *datanode
+    hostname: datanode2
+
+  # Spare node for the fault-tolerance exercise:
+  #   docker compose --profile spare up -d datanode3
+  datanode3:
+    <<: *datanode
+    hostname: datanode3
+    profiles: [spare]
+
+  resourcemanager:
+    <<: *hadoop
+    hostname: resourcemanager
+    mem_limit: 768m
+    command: yarn resourcemanager
+    ports:
+      - "127.0.0.1:8088:8088"
+    depends_on:
+      namenode:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      # RM and history server bind to their hostname, not localhost.
+      test:
+        - CMD
+        - curl
+        - -fs
+        - http://resourcemanager:8088/ws/v1/cluster/info
+
+  nodemanager:
+    <<: *hadoop
+    hostname: nodemanager
+    # Task JVMs run inside this container: 2 GB for YARN + the NM daemon itself.
+    mem_limit: 2560m
+    command: yarn nodemanager
+    depends_on:
+      resourcemanager:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      test:
+        - CMD
+        - curl
+        - -fs
+        - http://localhost:8042/ws/v1/node/info
+
+  historyserver:
+    <<: *hadoop
+    hostname: historyserver
+    command: mapred historyserver
+    ports:
+      - "127.0.0.1:19888:19888"
+    depends_on:
+      namenode:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      test:
+        - CMD
+        - curl
+        - -fs
+        - http://historyserver:19888/ws/v1/history/info
