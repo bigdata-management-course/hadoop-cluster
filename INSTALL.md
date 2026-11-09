@@ -1,6 +1,6 @@
 # Install Docker and start the course Hadoop cluster
 
-From Recitation 3 on, and for Homework 1, you run a small Hadoop cluster on your own laptop: six Docker
+From Recitation 2 on, and for Homework 1, you run a small Hadoop cluster on your own laptop: six Docker
 containers (NameNode, two DataNodes, ResourceManager, NodeManager, JobHistory server). This page gets you
 from nothing to a WordCount job running on that cluster.
 

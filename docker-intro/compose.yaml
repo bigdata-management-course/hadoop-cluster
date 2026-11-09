@@ -1,0 +1,17 @@
+---  # Two containers on one network: client reaches web by its service name.
+name: docker-intro
+
+services:
+  web:
+    build: .
+    image: hello-web
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  client:
+    image: curlimages/curl:8.23.0
+    depends_on:
+      - web
+    # web may still be starting: retry on a refused connection.
+    command: ["-s", "--retry", "5", "--retry-connrefused",
+              "http://web:8000/", "http://web:8000/", "http://web:8000/"]
